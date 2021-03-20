@@ -8,9 +8,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import os
 import qrcode
-# from pyzbar.pyzbar import decode
-# from zxing import BarCodeReader
-import cv2
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Thisissupposedtobesecret!'
