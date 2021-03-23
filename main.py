@@ -62,7 +62,7 @@ class RegisterForm(FlaskForm):
 def load_user(user_id):
     # return session.query(Users).get(int(user_id))
     # return User.query.get(int(user_id))
-    return session.query(Users).filter(Users.id == user_id).first()
+    return session.query(Users).filter(id==user_id).first()
         
 
 
