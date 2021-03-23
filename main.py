@@ -41,9 +41,9 @@ session = Session(engine)
 metadata = MetaData(engine)
 
 # Init login manager
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+# login_manager = LoginManager()
+# login_manager.init_app(app)
+# login_manager.login_view = 'login'
 
 
 class LoginForm(FlaskForm):
@@ -57,10 +57,10 @@ class RegisterForm(FlaskForm):
     password = PasswordField('password', validators=[InputRequired(), Length(min=8, max=80)])
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    return session.query(Users).get(int(user_id))
-    # return User.query.get(int(user_id))
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return session.query(Users).get(int(user_id))
+#     # return User.query.get(int(user_id))
 
 
 @app.route('/')
@@ -78,7 +78,8 @@ def signup():
         engine.execute(users.insert(), 
             username=form.username.data, 
             email=form.email.data, 
-            password=generate_password_hash(form.password.data, method='sha256')
+            password=generate_password_hash(form.password.data, method='sha256'),
+            points=0
         )
 
         # generate user qrcode by id
@@ -100,7 +101,7 @@ def login():
         password_entered = form.password.data
         user = session.query(Users).filter(or_(Users.username == username_entered, Users.email == username_entered)).first()
         if user is not None and check_password_hash(user.password, password_entered):
-            login_user(user, remember=form.remember.data)
+            # login_user(user, remember=form.remember.data)
             return redirect(url_for('dashboard'))
         else:
             return '<h1>Invalid username or password</h1>'
@@ -110,18 +111,22 @@ def login():
 
 
 @app.route('/dashboard')
-@login_required
+# @login_required
 def dashboard():
     return render_template('dashboard.html', 
-                            name=current_user.username, 
-                            imgpath='/static/qrcodes/' + str(current_user.id) + '.png',
-                            points=current_user.points)
+                            # name=current_user.username, 
+                            # imgpath='/static/qrcodes/' + str(current_user.id) + '.png',
+                            # points=current_user.points
+                            name='user',
+                            imgpath='/static/qrcodes/' + str(1) + '.png',
+                            points=0
+    )
 
 
 @app.route('/logout')
-@login_required
+# @login_required
 def logout():
-    logout_user()
+    # logout_user()
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
