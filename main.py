@@ -1,34 +1,50 @@
-from flask import Flask, render_template, redirect, url_for
+from config import Config
+from flask import Flask, render_template, redirect, url_for, request, jsonify
 from flask_bootstrap import Bootstrap
-from flask_wtf import FlaskForm 
+from flask_cors import CORS, cross_origin
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_sqlalchemy  import SQLAlchemy
+from flask_wtf import FlaskForm
+import os
+import psycopg2
+import qrcode
+from sqlalchemy import *
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import Session
+from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import InputRequired, Email, Length
-from flask_sqlalchemy  import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-import os
-import qrcode
 
+# app = Flask(__name__)
+# app.config['SECRET_KEY'] = 'Thisissupposedtobesecret!'
+# file_path = os.path.abspath(os.getcwd())+'\database.db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + file_path
+# bootstrap = Bootstrap(app)
+# db = SQLAlchemy(app)
+# login_manager = LoginManager()
+# login_manager.init_app(app)
+# login_manager.login_view = 'login'
+
+
+# Init app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'Thisissupposedtobesecret!'
-file_path = os.path.abspath(os.getcwd())+'\database.db'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + file_path
-bootstrap = Bootstrap(app)
-db = SQLAlchemy(app)
+app.config.from_object(Config)
+DB_URI = app.config['SQLALCHEMY_DATABASE_URI']
+engine = create_engine(DB_URI)
+
+# Init routes
+CORS(app, support_credentials=True)
+Base = automap_base()
+Base.prepare(engine, reflect=True)
+Users = Base.classes.users
+session = Session(engine)
+metadata = MetaData(engine)
+
+# Init login manager
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(15), unique=True)
-    email = db.Column(db.String(50), unique=True)
-    password = db.Column(db.String(80))
-    points = db.Column(db.Integer)
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 
 class LoginForm(FlaskForm):
     username = StringField('username', validators=[InputRequired(), Length(min=4, max=15)])
@@ -41,44 +57,57 @@ class RegisterForm(FlaskForm):
     password = PasswordField('password', validators=[InputRequired(), Length(min=8, max=80)])
 
 
+@login_manager.user_loader
+def load_user(user_id):
+    return session.query(Users).get(int(user_id))
+    # return User.query.get(int(user_id))
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
-
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user:
-            if check_password_hash(user.password, form.password.data):
-                login_user(user, remember=form.remember.data)
-                return redirect(url_for('dashboard'))
-
-        return '<h1>Invalid username or password</h1>'
-        #return '<h1>' + form.username.data + ' ' + form.password.data + '</h1>'
-
-    return render_template('login.html', form=form)
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     form = RegisterForm()
 
     if form.validate_on_submit():
-        hashed_password = generate_password_hash(form.password.data, method='sha256')
-        new_user = User(username=form.username.data, email=form.email.data, password=hashed_password, points=0)
-        db.session.add(new_user)
-        db.session.commit()
+        # points=0
+        users = Table('users', metadata, autoload=True)
+        engine.execute(users.insert(), 
+            username=form.username.data, 
+            email=form.email.data, 
+            password=generate_password_hash(form.password.data, method='sha256')
+        )
 
         # generate user qrcode by id
-        img = qrcode.make('racoon_' + str(new_user.id))
-        img.save('static/qrcodes/' + str(new_user.id) + '.png')
+        # img = qrcode.make('racoon_' + str(new_user.id))
+        # img.save('static/qrcodes/' + str(new_user.id) + '.png')
 
         return '<h1>New user has been created!</h1>'
         #return '<h1>' + form.username.data + ' ' + form.email.data + ' ' + form.password.data + '</h1>'
 
     return render_template('signup.html', form=form)
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        username_entered = form.username.data
+        password_entered = form.password.data
+        user = session.query(Users).filter(or_(Users.username == username_entered, Users.email == username_entered)).first()
+        if user is not None and check_password_hash(user.password, password_entered):
+            login_user(user, remember=form.remember.data)
+            return redirect(url_for('dashboard'))
+        else:
+            return '<h1>Invalid username or password</h1>'
+            #return '<h1>' + form.username.data + ' ' + form.password.data + '</h1>'
+
+    return render_template('login.html', form=form)
+
 
 @app.route('/dashboard')
 @login_required
@@ -87,6 +116,7 @@ def dashboard():
                             name=current_user.username, 
                             imgpath='/static/qrcodes/' + str(current_user.id) + '.png',
                             points=current_user.points)
+
 
 @app.route('/logout')
 @login_required
