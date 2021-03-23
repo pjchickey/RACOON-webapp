@@ -28,6 +28,7 @@ from wtforms.validators import InputRequired, Email, Length
 
 # Init app
 app = Flask(__name__)
+bootstrap = Bootstrap(app)
 app.config.from_object(Config)
 DB_URI = app.config['SQLALCHEMY_DATABASE_URI']
 engine = create_engine(DB_URI)
