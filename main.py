@@ -60,8 +60,10 @@ class RegisterForm(FlaskForm):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return session.query(Users).get(int(user_id))
+    # return session.query(Users).get(int(user_id))
     # return User.query.get(int(user_id))
+    return session.query(Users).filter(Users.id == user_id).first()
+        
 
 
 @app.route('/')
