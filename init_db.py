@@ -12,7 +12,7 @@ conn = psycopg2.connect(
 cur = conn.cursor()
 cur.execute(
     """
-    CREATE TABLE users (id SERIAL PRIMARY KEY, username VARCHAR(15) UNIQUE NOT NULL, password VARCHAR(80) NOT NULL, email VARCHAR(50) UNIQUE NOT NULL, points INT NOT NULL)
+    CREATE TABLE users (id SERIAL PRIMARY KEY, username VARCHAR(15) UNIQUE NOT NULL, password VARCHAR(80) NOT NULL, email VARCHAR(50) UNIQUE NOT NULL, points INT NOT NULL, qrcode BYTEA)
     """
 )
 cur.close()
