@@ -30,16 +30,17 @@ from wtforms.validators import InputRequired, Email, Length
 app = Flask(__name__)
 bootstrap = Bootstrap(app)
 app.config.from_object(Config)
-DB_URI = app.config['SQLALCHEMY_DATABASE_URI']
-engine = create_engine(DB_URI)
+db = SQLAlchemy(app) # new
+# DB_URI = app.config['SQLALCHEMY_DATABASE_URI']
+# engine = create_engine(DB_URI)
 
 # Init routes
-CORS(app, support_credentials=True)
-Base = automap_base()
-Base.prepare(engine, reflect=True)
-Users = Base.classes.users
-session = Session(engine)
-metadata = MetaData(engine)
+# CORS(app, support_credentials=True)
+# Base = automap_base()
+# Base.prepare(engine, reflect=True)
+# Users = Base.classes.users
+# session = Session(engine)
+# metadata = MetaData(engine)
 
 # Init login manager
 login_manager = LoginManager()
@@ -58,13 +59,21 @@ class RegisterForm(FlaskForm):
     password = PasswordField('password', validators=[InputRequired(), Length(min=8, max=80)])
 
 
+class User(UserMixin, db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(15), unique=True)
+    email = db.Column(db.String(50), unique=True)
+    password = db.Column(db.String(80))
+    points = db.Column(db.Integer)
+
+
 @login_manager.user_loader
 def load_user(user_id):
     # return session.query(Users).get(int(user_id))
-    # return User.query.get(int(user_id))
-    return session.query(Users).filter(id==user_id).first()
+    return User.query.get(int(user_id))
+    # return session.query(Users).filter(id==user_id).first()
         
-
 
 @app.route('/')
 def index():
@@ -77,13 +86,18 @@ def signup():
 
     if form.validate_on_submit():
         # points=0
-        users = Table('users', metadata, autoload=True)
-        engine.execute(users.insert(), 
-            username=form.username.data, 
-            email=form.email.data, 
-            password=generate_password_hash(form.password.data, method='sha256'),
-            points=0
-        )
+        # users = Table('users', metadata, autoload=True)
+        # engine.execute(users.insert(), 
+        #     username=form.username.data, 
+        #     email=form.email.data, 
+        #     password=generate_password_hash(form.password.data, method='sha256'),
+        #     points=0
+        # )
+
+        hashed_password = generate_password_hash(form.password.data, method='sha256')
+        new_user = User(username=form.username.data, email=form.email.data, password=hashed_password, points=0)
+        db.session.add(new_user)
+        db.session.commit()
 
         # generate user qrcode by id
         # img = qrcode.make('racoon_' + str(new_user.id))
@@ -100,10 +114,12 @@ def login():
     form = LoginForm()
 
     if form.validate_on_submit():
-        username_entered = form.username.data
-        password_entered = form.password.data
-        user = session.query(Users).filter(or_(Users.username == username_entered, Users.email == username_entered)).first()
-        if user is not None and check_password_hash(user.password, password_entered):
+        # username_entered = form.username.data
+        # password_entered = form.password.data
+        # user = session.query(Users).filter(or_(Users.username == username_entered, Users.email == username_entered)).first()
+        user = User.query.filter_by(username=form.username.data).first()
+        # if user is not None and check_password_hash(user.password, password_entered):
+        if user and check_password_hash(user.password, form.password.data):
             login_user(user, remember=form.remember.data)
             return redirect(url_for('dashboard'))
         else:
