@@ -101,7 +101,8 @@ def login():
 def dashboard():
     # load in qrcode binary info from db, then covert to digital and save as .png
     img_binary = current_user.qrcode
-    open('static/qrcode2.png', 'wb').write(img_binary)
+    imgpath = 'static/' + str(current_user.username) + '.png'
+    open(imgpath, 'wb').write(img_binary)
     return render_template('dashboard.html', 
                             name=current_user.username, 
                             imgpath='/static/qrcode2.png',
