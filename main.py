@@ -105,7 +105,7 @@ def dashboard():
     open(imgpath, 'wb').write(img_binary)
     return render_template('dashboard.html', 
                             name=current_user.username, 
-                            imgpath='/static/qrcode2.png',
+                            imgpath=imgpath,
                             points=current_user.points
     )
 
