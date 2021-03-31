@@ -1,5 +1,5 @@
 from config import Config
-from flask import Flask, render_template, redirect, url_for, request, jsonify
+from flask import Flask, flash, render_template, redirect, url_for, request, jsonify
 from flask_bootstrap import Bootstrap
 from flask_cors import CORS, cross_origin
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -86,14 +86,23 @@ def login():
 
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
-        if user and check_password_hash(user.password, form.password.data):
-            login_user(user, remember=form.remember.data)
-            return redirect(url_for('dashboard'))
-        else:
-            render_template('login.html', form=form)
-            # return '<h1>Invalid username or password</h1>'
+        if user:
+            if check_password_hash(user.password, form.password.data):
+                login_user(user, remember=form.remember.data)
+                return redirect(url_for('dashboard'))
+            else:
+                flash('incorrect password')
+        else:  
+            flash('incorrect username')
+        render_template('login.html', form=form)
+        # return '<h1>Invalid username or password</h1>'
 
     return render_template('login.html', form=form)
+
+
+@app.route('/info')
+def info():
+    return render_template('info.html')
 
 
 @app.route('/dashboard')

@@ -43,7 +43,7 @@ def main():
 
     # get the ID of the user from the QR code
     # username = getUsername()
-    username = 'example'
+    username = 'demotest'
 
     # get the result of the sorting
     # result = sortingResult()

@@ -1,13 +1,12 @@
 {% extends "bootstrap/base.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
 
 {% block title %}
-Login
+Demo App
 {% endblock %}
 
 {% block styles %}
 {{super()}}
-<link rel="stylesheet" href="{{url_for('.static', filename='css/signin.css')}}">
+<link rel="stylesheet" href="{{url_for('.static', filename='css/starter-template.css')}}">
 {% endblock %}
 
 {% block content %}
@@ -25,32 +24,22 @@ Login
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li><a href="{{ url_for('index') }}">Home</a></li>
-            <li class="active"><a href="#">Login</a></li>
+            <li><a href="{{ url_for('login') }}">Login</a></li>
             <li><a href="{{ url_for('signup') }}">Sign Up</a></li>
-            <li><a href="{{ url_for('info') }}">Recycling Info</a></li>
+            <li class="active"><a href="#">Recycling Info</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
-    
-    <div class="container">
-      <form class="form-signin" method="POST" action="/login">
-        <h2 class="form-signin-heading">Please sign in</h2>
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            <ul class=flashes>
-            {% for message in messages %}
-              <li>{{ message }}</li>
-            {% endfor %}
-            </ul>
-          {% endif %}
-        {% endwith %}
-        {{ form.hidden_tag() }}
-        {{ wtf.form_field(form.username) }}
-        {{ wtf.form_field(form.password) }}
-        {{ wtf.form_field(form.remember) }}
-        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-      </form>
 
-    </div> <!-- /container -->
+    <div class="container">
+
+      <div class="starter-template">
+        <h1>Recycling Info</h1>
+        <p class="lead">Here are a couple infographics for what to recycle and what to throw away in bins at Rice</p>
+        <img src="static/RecycleGraphic.png" width="550" height="800" alt="RecycleGraphic">
+        <img src="static/TrashGraphic.png" width="550" height="800" alt="TrashGraphic">
+    </div>
+
+    </div><!-- /.container -->
 {% endblock %}
