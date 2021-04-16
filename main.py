@@ -40,6 +40,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(50), unique=True)
     password = db.Column(db.String(80))
     points = db.Column(db.Integer)
+    giveaway_entries = db.Column(db.Integer)
     qrcode = db.Column(db.LargeBinary)
 
 
@@ -64,6 +65,7 @@ def signup():
                         email=form.email.data, 
                         password=hashed_password, 
                         points=0,
+                        giveaway_entries=0,
                         qrcode=None)
         print(new_user.username)
         img = qrcode.make('racoon_' + str(new_user.username))
@@ -105,18 +107,47 @@ def info():
     return render_template('info.html')
 
 
-@app.route('/dashboard')
+def enter_giveaway(conn, task):
+    """
+    update priority, begin_date, and end date of a task
+    :param conn:
+    :param task:
+    :return: project id
+    """
+    sql = ''' UPDATE users
+              SET points = points - 5
+              ,giveaway_entries = giveaway_entries + 1
+              WHERE username = %s;'''
+    cur = conn.cursor()
+    cur.execute(sql, task)
+    conn.commit()
+
+
+@app.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
     # load in qrcode binary info from db, then covert to digital and save as .png
     img_binary = current_user.qrcode
     imgpath = 'static/' + str(current_user.username) + '.png'
     open(imgpath, 'wb').write(img_binary)
+
+    # user attempts to enter gift card giveaway
+    if request.method == 'POST':
+        if current_user.points < 5:
+            flash('insufficient points')
+        else:
+            conn = psycopg2.connect('postgresql://iyrxjafwmybqog:047647631db0ac1b3d727d7edd5b9e4c299586131585e1b6d41b2bc98e412521@ec2-52-7-115-250.compute-1.amazonaws.com:5432/dfmfctp63eg654')
+            enter_giveaway(conn, (current_user.username,))
+            flash("you've entered the giveaway!")
+            return redirect(url_for('dashboard'))
+
+    # normal page entry
     return render_template('dashboard.html', 
                             name=current_user.username, 
                             imgpath=imgpath,
                             points=current_user.points
     )
+
 
 
 @app.route('/logout')

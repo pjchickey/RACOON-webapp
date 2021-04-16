@@ -43,11 +43,11 @@ def main():
 
     # get the ID of the user from the QR code
     # username = getUsername()
-    username = 'demotest'
+    username = 'pjchickey'
 
     # get the result of the sorting
     # result = sortingResult()
-    result = 'trash'
+    result = 'recycling'
     if result == 'recycling':
         points = 2
     else:
